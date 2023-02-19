@@ -1,40 +1,43 @@
 import throttle from 'lodash.throttle';
 
+const form = document.querySelector('.feedback-form');
 const STORAGE_KEY = 'feedback-form-state';
 const formData = {};
-const parsedData = JSON.parse(localStorage.getItem(STORAGE_KEY));
 
-const refs = {
-  form: document.querySelector('.feedback-form'),
-  email: document.querySelector('.feedback-form  input'),
-  textarea: document.querySelector('.feedback-form  textarea'),
-};
+updateOutput();
 
-refs.form.addEventListener('input', e => {
-  formData[e.target.name] = e.target.value;
-});
-refs.form.addEventListener('submit', onFormSubmit);
-refs.textarea.addEventListener('input', throttle(onTextareaInput, 500));
+form.addEventListener(
+  'input',
+  throttle(event => {
+    formData[event.target.name] = event.target.value;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
+  }, 500)
+);
 
-populateTextarea();
-
-function onTextareaInput(evt) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
-}
-
-function onFormSubmit(evt) {
-  evt.preventDefault();
-
-  evt.currentTarget.reset();
-  localStorage.removeItem(STORAGE_KEY);
-  console.log(formData);
-}
-
-function populateTextarea() {
-  const savedEmail = parsedData.email;
-  const savedMessage = parsedData.message;
-  if (parsedData) {
-    refs.email.value = savedEmail;
-    refs.message.value = savedMessage;
+function updateOutput() {
+  if (load(STORAGE_KEY)) {
+    const outputForm = load(STORAGE_KEY);
+    const formKeys = Object.keys(outputForm);
+    formKeys.map(element => {
+      document.querySelector(`[name='${element}']`).value = outputForm[element];
+    });
   }
+}
+
+function load(key) {
+  try {
+    const serializedState = localStorage.getItem(key);
+    return serializedState === null ? undefined : JSON.parse(serializedState);
+  } catch (error) {
+    console.console.error(error.message);
+  }
+}
+
+form.addEventListener('submit', handleSubmitForm);
+
+function handleSubmitForm(event) {
+  event.preventDefault();
+  console.log(load(STORAGE_KEY));
+  event.currentTarget.reset();
+  localStorage.removeItem(STORAGE_KEY);
 }
